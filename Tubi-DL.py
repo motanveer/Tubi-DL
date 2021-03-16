@@ -1,7 +1,19 @@
+import os
 import json
 import requests
 import yaml
+import argparse
 from bs4 import BeautifulSoup
+
+
+
+parser = argparse.ArgumentParser(description= "Tubi-DL is a wrapper for YouTube that allows you to downloaod all the episodes of a series from Tubi")
+parser.add_argument('seriesURL', help="Example URL: https://tubitv.com/series/1098/sabrina-the-animated-series?start=true")
+#parser.add_argument('-y', "--youtubedl", help="Enter any standard YouTube-DL arguments")
+parser.add_argument('-c', '--concurrent', action="store_true", help="Using this flag will start the downloads of ALL the episodes at the same time") 
+
+args = parser.parse_args()
+
 
 # This function will build a list of all the episode IDs:
 def extractIDs(seasons):
@@ -13,13 +25,38 @@ def extractIDs(seasons):
     return episodeIds
 
 
-#Pull down Tubi Series webpage
-#r = requests.get("https://tubitv.com/series/2067/yu-gi-oh?start=true")
+tubiURL = args.seriesURL
+seriesID = "0" + tubiURL.split('/')[4]
+print(seriesID)
 
-r = requests.get("https://tubitv.com/series/4/transformers-cybertron?start=true")
+
+#=====================================================================================
+
+def build(episodeID):
+    os.mkdir(seriesID);
+    for episode in episodeID:
+        if(args.concurrent):
+            episode = "youtube-dl " +  " https://tubitv.com/tv-shows/" + episode + " &" "\n"
+        else:
+            episode = "youtube-dl " +  " https://tubitv.com/tv-shows/" + episode + " &&" "\n"
+        
+        f = open(fileName, "a")
+        f.write(episode)
+        f.close()
+
+#=====================================================================================
+
+
+#Pull down Tubi Series webpage
+r = requests.get(tubiURL)
+
+
+#r = requests.get("https://tubitv.com/series/4/transformers-cybertron?start=true")
 
 # Create BS4 Object
 soup = BeautifulSoup(r.text, 'html.parser')
+
+fileName = seriesID+"/"+ soup.find('title').text + ".sh"
 
 # Get all the script tags and put them in a dictonary:
 scripts = soup.find_all('script')
@@ -43,14 +80,8 @@ dataScript = dataScript[:-1] # Remove a weird semi colon at the end
 dataScript =  yaml.load(dataScript) # Since this data isn't actually JSON we need to load it as YAML which at least allw us to build a strcutured data type arround it
 
 
-dataScript = [dataScript['video']['byId']['04']['seasons']] # Drilling down into the element which contains the information about episode IDs
+dataScript = [dataScript['video']['byId'][seriesID]['seasons']] # Drilling down into the element which contains the information about episode IDs
 dataScript = dataScript[0];  #This element contains all the seasons of a TV Show
 
 
-episodeID = extractIDs(dataScript)
-
-for episode in episodeID:
-    episode = "https://tubitv.com/tv-shows/" + episode + "\n"
-    f = open("episodes.txt", "a")
-    f.write(episode)
-    f.close()
+build(episodeID = extractIDs(dataScript))
