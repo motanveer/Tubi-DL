@@ -15,20 +15,18 @@ parser.add_argument('-c', '--concurrent', action="store_true", help="Using this 
 args = parser.parse_args()
 
 
-# This function will build a list of all the episode IDs:
-def extractIDs(seasons):
-    episodeIds = []
-    for season in seasons:
-        title = season['title']
-        for episode in season['episodeIds']:
-            episodeIds.append(episode)
-    return episodeIds
-
-
 tubiURL = args.seriesURL
 seriesID = "0" + tubiURL.split('/')[4]
 print(seriesID)
 
+
+def extractIDs(seasons):
+    episodeIds = []
+    for season in seasons:
+        for episode in season['episodes']:
+            episodeId = episode['id']
+            episodeIds.append(episodeId)
+    return episodeIds
 
 #=====================================================================================
 
@@ -77,7 +75,7 @@ dataScript = dataScript.split("window.__data=")
 dataScript = dataScript[1]  # Split generates a dictornary, so we need to chose the correct element.
 dataScript = dataScript[:-1] # Remove a weird semi colon at the end 
 
-dataScript =  yaml.load(dataScript) # Since this data isn't actually JSON we need to load it as YAML which at least allw us to build a strcutured data type arround it
+dataScript =  yaml.safe_load(dataScript) # Since this data isn't actually JSON we need to load it as YAML which at least allw us to build a strcutured data type arround it
 
 
 dataScript = [dataScript['video']['byId'][seriesID]['seasons']] # Drilling down into the element which contains the information about episode IDs
