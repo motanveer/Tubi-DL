@@ -31,16 +31,17 @@ def extractIDs(seasons):
 #=====================================================================================
 
 def build(episodeID):
-    os.mkdir(seriesID);
-    for episode in episodeID:
-        if(args.concurrent):
-            episode = "youtube-dl " +  " https://tubitv.com/tv-shows/" + episode + " &" "\n"
+    os.mkdir(seriesID)
+    for i, episode in enumerate(episodeID):
+        if args.concurrent:
+            separator = "&" if i < len(episodeID) - 1 else ""
         else:
-            episode = "youtube-dl " +  " https://tubitv.com/tv-shows/" + episode + " &&" "\n"
-        
-        f = open(fileName, "a")
-        f.write(episode)
-        f.close()
+            separator = "&&" if i < len(episodeID) - 1 else ""
+
+        episode_cmd = f"youtube-dl https://tubitv.com/tv-shows/{episode} {separator}\n"
+
+        with open(fileName, "a") as f:
+            f.write(episode_cmd)
 
 #=====================================================================================
 
@@ -54,7 +55,11 @@ r = requests.get(tubiURL)
 # Create BS4 Object
 soup = BeautifulSoup(r.text, 'html.parser')
 
-fileName = seriesID+"/"+ soup.find('title').text + ".sh"
+# Get the first word of the title
+shortened_title = soup.find('title').text.split()[0].lower()
+
+# Use the shortened title in the file name
+fileName = seriesID + "/" + shortened_title + ".sh"
 
 # Get all the script tags and put them in a dictonary:
 scripts = soup.find_all('script')
